@@ -28,3 +28,7 @@ main{max-width:1240px;margin:auto;padding:24px 18px 60px}.hero{display:flex;just
 .circular-link span:last-child{font-size:1.2rem}
 @media(max-width:980px){.circulars{align-items:stretch;flex-direction:column}.circular-links{min-width:0;width:100%}}
 @media(max-width:650px){.circular-links{grid-template-columns:1fr}.circulars{padding:18px}}
+
+.source-status{margin-top:18px;padding:20px 24px}
+.source-status strong{display:block;font-size:1.1rem;margin-top:5px}
+.source-status p{margin:7px 0 0;color:var(--muted)}

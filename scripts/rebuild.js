@@ -16,7 +16,7 @@ for(const arr of groups.values()){
 }
 const config=await readJson('config.json');
 const circulars=Object.values(config.stores).filter(x=>x.enabled).map(x=>({name:x.name,label:x.storeLabel||x.name,url:x.circularUrl||x.url,storeUrl:x.storeUrl||x.url}));
-const output={meta:{week:`Week of ${week}`,weekId:week,zip:scraped.zip,stores:['Weis','Harris Teeter','Giant'],coverage:`Automated URL pull completed ${scraped.generatedAt}. Low-confidence matches require review.`,generatedAt:scraped.generatedAt,automated:true,dataSource:'Live retailer URLs',circulars,diagnostics:scraped.diagnostics},deals,comparisons};
+const output={meta:{source:"live-url",generatedAt:raw.generatedAt,week:`Week of ${week}`,weekId:week,zip:scraped.zip,stores:['Weis','Harris Teeter','Giant'],coverage:`Automated URL pull completed ${scraped.generatedAt}. Low-confidence matches require review.`,generatedAt:scraped.generatedAt,automated:true,dataSource:'Live retailer URLs',circulars,diagnostics:scraped.diagnostics},deals,comparisons};
 await writeJson(`data/week-${week}.json`,output);
 let manifest=await readJson('data/manifest.json');
 manifest.weeks=manifest.weeks.filter(x=>x.id!==week);

@@ -12,24 +12,22 @@
     "dataSource": "Uploaded circular screenshots",
     "circulars": [
       {
-        "name": "Weis",
-        "label": "Millsboro #272",
-        "url": "https://www.weismarkets.com/weeklyad",
-        "storeUrl": "https://www.weismarkets.com/stores/weis-markets-millsboro-272/4348"
+        "name": "Weis Markets",
+        "label": "Millsboro #272 weekly ad",
+        "url": "https://www.weismarkets.com/weeklyad"
       },
       {
         "name": "Harris Teeter",
-        "label": "Bayside, Selbyville",
-        "url": "https://www.harristeeter.com/weeklyad",
-        "storeUrl": "https://www.harristeeter.com/stores/grocery/de/selbyville/bayside/097/00327"
+        "label": "Bayside, Selbyville weekly ad",
+        "url": "https://www.harristeeter.com/weeklyad"
       },
       {
-        "name": "Giant",
-        "label": "Millsboro",
-        "url": "https://stores.giantfood.com/de/millsboro/25939-john-j-williams-hwy",
-        "storeUrl": "https://stores.giantfood.com/de/millsboro/25939-john-j-williams-hwy"
+        "name": "Giant Food",
+        "label": "Millsboro store and weekly ad",
+        "url": "https://stores.giantfood.com/de/millsboro/25939-john-j-williams-hwy"
       }
-    ]
+    ],
+    "source": "screenshot-fallback"
   },
   "deals": [
     {

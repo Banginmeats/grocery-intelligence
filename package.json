@@ -11,10 +11,12 @@
     "scrape:weis": "node scripts/scrape-all.js --store weis",
     "rebuild": "node scripts/rebuild.js",
     "test": "node --test tests/*.test.js",
-    "check": "node --check scripts/scrape-all.js && node --check scripts/rebuild.js"
+    "check": "node --check scripts/scrape-all.js && node --check scripts/rebuild.js && node --check scripts/adapters/common.js && node --check scripts/lib/extract.js && node --check app.js"
   },
   "dependencies": {
     "playwright": "^1.54.1"
   },
-  "engines": {"node": ">=20"}
+  "engines": {
+    "node": ">=20"
+  }
 }

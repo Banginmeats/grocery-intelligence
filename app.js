@@ -32,7 +32,16 @@ function render(){
   $("#weekLabel").textContent=d.meta.week;
   $("#coverageText").textContent=d.meta.coverage||`ZIP ${d.meta.zip}`;
   const circulars=d.meta.circulars||[];
-  $("#circularLinks").innerHTML=circulars.map(c=>`<a class="circular-link" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer"><span><b>${esc(c.name)}</b><small>${esc(c.label||"Weekly ad")}</small></span><span aria-hidden="true">↗</span></a>`).join("")||`<span class="empty">Circular links are unavailable for this week.</span>`;
+  if(circulars.length){
+    $("#circularLinks").innerHTML=circulars.map(c=>`<a class="circular-link" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer"><span><b>${esc(c.name)}</b><small>${esc(c.label||"Weekly ad")}</small></span><span aria-hidden="true">↗</span></a>`).join("");
+  }
+  const live = d.meta && d.meta.source === "live-url";
+  const sourceStatus = $("#sourceStatus");
+  const sourceDetail = $("#sourceStatusDetail");
+  if(sourceStatus) sourceStatus.textContent = live ? "Live retailer URL data published" : "Screenshot fallback currently published";
+  if(sourceDetail) sourceDetail.textContent = live
+    ? `Live pull completed ${d.meta.generatedAt ? new Date(d.meta.generatedAt).toLocaleString() : "successfully"}.`
+    : "Run “Live grocery URL update” in GitHub Actions. The site changes to live URL data only after the pull passes its completeness check.";
   const cats=["All",...new Set(d.deals.map(x=>x.category))];
   $("#categoryRow").innerHTML=cats.map(c=>`<button data-cat="${esc(c)}" class="${c===state.category?"active":""}">${esc(c)}</button>`).join("");
   $("#categoryRow").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;render()});
