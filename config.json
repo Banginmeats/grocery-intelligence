@@ -1,0 +1,22 @@
+{
+  "zip": "19966",
+  "timezone": "America/New_York",
+  "minimumTotalDeals": 40,
+  "stores": {
+    "giant": {
+      "name": "Giant",
+      "url": "https://giantfood.com/savings/weekly-ad/print-view",
+      "enabled": true
+    },
+    "harris-teeter": {
+      "name": "Harris Teeter",
+      "url": "https://www.harristeeter.com/weeklyad?flyer_type_name=weekly",
+      "enabled": true
+    },
+    "weis": {
+      "name": "Weis",
+      "url": "https://www.weismarkets.com/flyers/print",
+      "enabled": true
+    }
+  }
+}
