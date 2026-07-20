@@ -1,0 +1,10 @@
+GROCERY INTELLIGENCE v2.2 REPLACEMENT
+
+1. Extract this ZIP.
+2. Delete the existing website files in your local repository, but DO NOT delete the hidden .git folder.
+3. Copy all files and folders from this ZIP into the repository root.
+4. Open GitHub Desktop.
+5. Commit with: Publish all valid deals and restore Giant coverage
+6. Push origin.
+7. Open the site and press Ctrl+F5.
+8. Confirm the header shows v2.2.
