@@ -36,3 +36,22 @@ main{max-width:1240px;margin:auto;padding:24px 18px 60px}.hero{display:flex;just
 .header-actions{display:flex;align-items:center;gap:12px}.studio-button{white-space:nowrap}
 
 .requirements{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.req{font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:#fff1d9;color:#805006}.req.loyalty{background:#e5f2ec;color:#176447}.deal .fineprint{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.35}.unit-price{font-size:11px;color:var(--muted);margin-top:4px}.review-note{font-size:11px;color:#8a5705;margin-top:7px}.comparison .requirements{margin-top:8px}.dynamic-prices{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}.store-price.winner{outline:2px solid var(--lime)}
+
+/* v2.1 detailed four-store comparison cards */
+main{max-width:1500px}
+.four-store-prices{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.store-price{min-width:0;border:1px solid transparent}
+.store-price-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.store-price h5{font-size:15px;line-height:1.25;margin:10px 0 4px}
+.item-detail{font-size:12px;line-height:1.35;color:var(--muted);min-height:32px}
+.size-line{font-size:12px;margin:8px 0;color:var(--text)}
+.ad-price{font-size:22px!important;margin:8px 0 2px!important}
+.best-tag{font-size:9px;background:var(--lime);color:#173025;border-radius:999px;padding:4px 6px}
+.store-price.unavailable{opacity:.7;border:1px dashed var(--line);display:flex;flex-direction:column;justify-content:center;min-height:190px}
+.store-price.unavailable strong{font-size:15px;margin-bottom:5px}
+.winner-chip.neutral{background:#e7ece9;color:var(--muted)}
+.group-label{font-size:12px;color:var(--muted);margin:-2px 0 9px}
+.comparison h4{font-size:20px}
+.comparison .note{line-height:1.45}
+@media(max-width:1100px){.four-store-prices{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.four-store-prices{grid-template-columns:1fr}.store-price.unavailable{min-height:100px}}
