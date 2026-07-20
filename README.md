@@ -51,3 +51,8 @@ npm run scrape:weis
 ## Current data
 
 The existing Week 1 dataset remains included as the initial fallback so the dashboard is populated before the first successful automated run.
+
+
+## V2 deployment note
+
+Use GitHub Pages **Deploy from a branch → main → /(root)**. This release intentionally does not include a custom Pages workflow. The only workflow is the scheduled weekly grocery updater.
