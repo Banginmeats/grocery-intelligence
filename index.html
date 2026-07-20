@@ -11,7 +11,7 @@
   <header class="appbar">
     <div class="brand">
       <div class="mark">GI</div>
-      <div><h1>Grocery Intelligence</h1><p>Compare any stores from uploaded circular PDFs</p></div>
+      <div><h1>Grocery Intelligence</h1><p>Compare weekly grocery deals across local stores</p></div>
     </div>
     <div class="header-actions"><a class="studio-button" href="studio.html">Upload circular PDFs</a><button class="icon-button" id="themeButton" aria-label="Toggle theme">◐</button></div>
   </header>
@@ -70,15 +70,13 @@
       </div>
       <select id="storeFilter">
         <option value="all">All stores</option>
-        <option>Weis</option>
-        <option>Harris Teeter</option>
-        <option>Giant</option>
+        
       </select>
       <select id="matchFilter">
         <option value="all">All match types</option>
-        <option value="Exact">Exact</option>
-        <option value="Likely exact">Likely exact</option>
-        <option value="Comparable">Comparable</option>
+        <option value="Exact candidate">Exact candidates</option>
+        <option value="Comparable by weight">Comparable by weight</option>
+        <option value="Category candidate">Category candidates</option>
       </select>
       <button id="resetButton">Reset</button>
     </section>
@@ -134,7 +132,7 @@
     </section>
   </main>
 
-  <footer>PDF circular comparison studio · Processing occurs locally in your browser</footer>
+  <footer>Grocery Intelligence · Weekly circular comparison for ZIP 19966</footer>
   <script src="app.js"></script>
 </body>
 </html>

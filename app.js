@@ -1,122 +1,19 @@
-
 const state={manifest:null,data:null,category:"All",view:"compare",favorites:new Set(JSON.parse(localStorage.getItem("groceryFavorites")||"[]"))};
-const $=s=>document.querySelector(s);
-const esc=v=>String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
-
-async function boot(){
-  state.manifest=await fetch("data/manifest.json").then(r=>r.json());
-  const localWeek=readUploadedWeek();
-  const options=[...(localWeek?[{id:"uploaded-local",label:`Uploaded · ${localWeek.meta.week}`}]:[]),...state.manifest.weeks];
-  $("#weekSelect").innerHTML=options.map(w=>`<option value="${esc(w.id)}">${esc(w.label)}</option>`).join("");
-  const preferred=localWeek?"uploaded-local":state.manifest.defaultWeek;
-  $("#weekSelect").value=preferred;
-  await loadWeek(preferred);
-  wire();
-}
-function readUploadedWeek(){
-  try{return JSON.parse(localStorage.getItem("groceryUploadedWeek")||"null")}catch{return null}
-}
-async function loadWeek(id){
-  if(id==="uploaded-local"){
-    state.data=readUploadedWeek();
-    if(!state.data) return loadWeek(state.manifest.defaultWeek);
-  }else{
-    const item=state.manifest.weeks.find(w=>w.id===id);
-    state.data=await fetch(item.file).then(r=>r.json());
-  }
-  state.category="All";
-  buildStoreFilter();
-  render();
-}
-function buildStoreFilter(){
-  const stores=state.data?.meta?.stores||[];
-  $("#storeFilter").innerHTML=`<option value="all">All stores</option>${stores.map(x=>`<option>${esc(x)}</option>`).join("")}`;
-}
-function wire(){
-  $("#weekSelect").addEventListener("change",e=>loadWeek(e.target.value));
-  ["searchInput","storeFilter","matchFilter"].forEach(id=>$("#"+id).addEventListener(id==="searchInput"?"input":"change",render));
-  $("#resetButton").onclick=()=>{$("#searchInput").value="";$("#storeFilter").value="all";$("#matchFilter").value="all";state.category="All";render()};
-  document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{state.view=b.dataset.view;renderViews()});
-  $("#themeButton").onclick=()=>{document.body.classList.toggle("dark");localStorage.setItem("groceryTheme",document.body.classList.contains("dark")?"dark":"light")};
-  if(localStorage.getItem("groceryTheme")==="dark")document.body.classList.add("dark");
-}
-function filters(){return {q:$("#searchInput").value.trim().toLowerCase(),store:$("#storeFilter").value,match:$("#matchFilter").value}}
-function render(){
-  const d=state.data,f=filters(),stores=d.meta.stores||[];
-  $("#weekLabel").textContent=d.meta.week;
-  $("#coverageText").textContent=d.meta.coverage||`${stores.length} uploaded store${stores.length===1?"":"s"}`;
-  const circulars=d.meta.circulars||[];
-  $("#circularLinks").innerHTML=circulars.length?circulars.map(c=>c.objectUrl
-    ?`<a class="circular-link" href="${esc(c.objectUrl)}" target="_blank" rel="noopener"><span><b>${esc(c.name)}</b><small>${esc(c.label||"Uploaded PDF")}</small></span><span>↗</span></a>`
-    :`<div class="circular-link"><span><b>${esc(c.name)}</b><small>${esc(c.label||"Uploaded PDF")}</small></span><span>PDF</span></div>`).join("")
-    :`<a class="circular-link" href="studio.html"><span><b>Upload circular PDFs</b><small>Add any number of stores</small></span><span>→</span></a>`;
-  const isUploaded=d.meta.source==="pdf-upload";
-  $("#sourceStatus").textContent=isUploaded?"Uploaded PDF circular data":"Built-in demonstration week";
-  $("#sourceStatusDetail").textContent=isUploaded
-    ?`${d.deals.length} reviewed deals from ${stores.length} store${stores.length===1?"":"s"}. Created ${new Date(d.meta.generatedAt).toLocaleString()}.`
-    :"Use Upload circular PDFs to create a new week from as many or as few stores as you choose.";
-
-  const cats=["All",...new Set(d.deals.map(x=>x.category||"Other"))];
-  $("#categoryRow").innerHTML=cats.map(c=>`<button data-cat="${esc(c)}" class="${c===state.category?"active":""}">${esc(c)}</button>`).join("");
-  $("#categoryRow").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;render()});
-
-  const wins=(d.comparisons||[]).map(x=>x.winner).filter(Boolean).reduce((a,x)=>(a[x]=(a[x]||0)+1,a),{});
-  const winner=Object.entries(wins).sort((a,b)=>b[1]-a[1])[0]?.[0]||"No clear winner";
-  $("#overallWinner").textContent=winner;
-  $("#winnerReason").textContent=winner==="No clear winner"?"More comparable products are needed.":`${wins[winner]} current comparison wins.`;
-
-  const exact=(d.comparisons||[]).filter(x=>x.match==="Exact").length;
-  const strong=d.deals.filter(x=>(x.rating||0)>=4).length;
-  $("#statGrid").innerHTML=[
-    ["Captured deals",d.deals.length,isUploaded?"Reviewed PDF extraction":"Current JSON week"],
-    ["Comparisons",(d.comparisons||[]).length,`${exact} confirmed exact`],
-    ["Strong buys",strong,"Rated four or five stars"],
-    ["Stores",stores.length,isUploaded?"Uploaded this week":"Demonstration data"]
-  ].map(x=>`<article class="stat"><span>${x[0]}</span><strong>${x[1]}</strong><small>${x[2]}</small></article>`).join("");
-
-  const comps=(d.comparisons||[]).filter(x=>
-    (state.category==="All"||x.category===state.category)&&
-    (f.match==="all"||x.match===f.match)&&
-    (`${x.item} ${x.category} ${x.note} ${x.winner}`.toLowerCase().includes(f.q))&&
-    (f.store==="all"&&true||x.prices?.[f.store])
-  );
-  $("#comparisonCount").textContent=`${comps.length} shown`;
-  $("#comparisonList").innerHTML=comps.map(x=>`<article class="comparison">
-    <div class="comparison-top"><div><h4>${esc(x.item)}</h4><span class="match ${x.match==="Comparable"?"comparable":""}">${esc(x.match||"Comparable")}</span></div><span class="winner-chip">${esc(x.winner||"—")}</span></div>
-    <div class="prices dynamic-prices">${stores.map(store=>`<div class="store-price"><span>${esc(store.toUpperCase())}</span><strong>${esc(x.prices?.[store]||"—")}</strong></div>`).join("")}</div>
-    <p class="note">${esc(x.note||"")}</p></article>`).join("")||`<p class="empty">No comparisons match those filters.</p>`;
-
-  const deals=d.deals.filter(x=>
-    (state.category==="All"||(x.category||"Other")===state.category)&&
-    (f.store==="all"||x.store===f.store)&&
-    (`${x.item} ${x.brand||""} ${x.category||""} ${x.promo||""}`.toLowerCase().includes(f.q))
-  );
-  $("#dealCount").textContent=`${deals.length} shown`;
-  $("#dealGrid").innerHTML=deals.map(dealCard).join("")||`<p class="empty">No deals match those filters.</p>`;
-  $("#dealGrid").querySelectorAll(".heart").forEach(b=>b.onclick=()=>toggleFavorite(String(b.dataset.id)));
-
-  const strongDeals=d.deals.filter(x=>(x.rating||0)>=4);
-  $("#planGrid").innerHTML=stores.map(store=>{
-    const items=strongDeals.filter(x=>x.store===store).sort((a,b)=>(b.rating||0)-(a.rating||0)).slice(0,8);
-    return `<article class="store-plan"><h4><span>${esc(store)}</span><span>${items.length} buys</span></h4>${items.length?`<ul>${items.map(x=>`<li>${esc(x.item)} — <b>${esc(x.display)}</b></li>`).join("")}</ul>`:"<p>No strong loaded deals.</p>"}</article>`;
-  }).join("");
-  renderFavorites();renderViews();
-}
-function dealCard(x){
-  const id=String(x.id),saved=state.favorites.has(id);
-  return `<article class="deal"><div class="deal-head"><span class="store-pill">${esc(x.store)}</span><button class="heart ${saved?"saved":""}" data-id="${esc(id)}">${saved?"♥":"♡"}</button></div>
-  <h4>${esc(x.item)}</h4><small>${esc(x.brand||"")} ${x.size?`· ${esc(x.size)}`:""}</small><div class="promo">${esc(x.promo||"")}</div><div class="price">${esc(x.display||"")}</div><div class="stars">${"★".repeat(x.rating||0)}${"☆".repeat(5-(x.rating||0))}</div></article>`;
-}
-function toggleFavorite(id){state.favorites.has(id)?state.favorites.delete(id):state.favorites.add(id);localStorage.setItem("groceryFavorites",JSON.stringify([...state.favorites]));render()}
-function renderFavorites(){
-  const list=state.data.deals.filter(x=>state.favorites.has(String(x.id)));
-  $("#favoriteGrid").innerHTML=list.map(dealCard).join("");
-  $("#favoriteGrid").querySelectorAll(".heart").forEach(b=>b.onclick=()=>toggleFavorite(String(b.dataset.id)));
-  $("#favoriteEmpty").classList.toggle("hidden",list.length>0);
-}
-function renderViews(){
-  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
-  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.view===state.view));
-  $("#"+state.view+"View").classList.add("active");
-}
+const $=s=>document.querySelector(s); const esc=v=>String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
+async function boot(){state.manifest=await fetch("data/manifest.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error(`Manifest ${r.status}`);return r.json()});const options=state.manifest.weeks;$("#weekSelect").innerHTML=options.map(w=>`<option value="${esc(w.id)}">${esc(w.label)}</option>`).join("");await loadWeek(state.manifest.defaultWeek);wire()}
+async function loadWeek(id){const item=state.manifest.weeks.find(w=>w.id===id);state.data=await fetch(item.file,{cache:"no-store"}).then(r=>{if(!r.ok)throw Error(`Data ${r.status}`);return r.json()});state.category="All";buildStoreFilter();render()}
+function buildStoreFilter(){const stores=state.data?.stores||[];$("#storeFilter").innerHTML=`<option value="all">All stores</option>${stores.map(x=>`<option>${esc(x)}</option>`).join("")}`}
+function wire(){$("#weekSelect").addEventListener("change",e=>loadWeek(e.target.value));["searchInput","storeFilter","matchFilter"].forEach(id=>$("#"+id).addEventListener(id==="searchInput"?"input":"change",render));$("#resetButton").onclick=()=>{$("#searchInput").value="";$("#storeFilter").value="all";$("#matchFilter").value="all";state.category="All";render()};document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{state.view=b.dataset.view;renderViews()});$("#themeButton").onclick=()=>{document.body.classList.toggle("dark");localStorage.setItem("groceryTheme",document.body.classList.contains("dark")?"dark":"light")};if(localStorage.getItem("groceryTheme")==="dark")document.body.classList.add("dark")}
+function filters(){return{q:$("#searchInput").value.trim().toLowerCase(),store:$("#storeFilter").value,match:$("#matchFilter").value}}
+function visibleDeals(){const f=filters();return state.data.deals.filter(x=>(state.category==="All"||x.department===state.category)&&(f.store==="all"||x.store===f.store)&&(f.match==="all"||x.comparisonLevel===f.match)&&(`${x.productName} ${x.brand||""} ${x.department||""} ${x.exactAdWording||""} ${x.promotionType||""}`.toLowerCase().includes(f.q)))}
+function comparisons(){const f=filters(),groups=new Map();state.data.deals.filter(x=>x.comparisonReady&&typeof x.normalizedUnitPrice==="number"&&!x.needsReview).forEach(x=>{if(!groups.has(x.comparisonGroupId))groups.set(x.comparisonGroupId,[]);groups.get(x.comparisonGroupId).push(x)});return [...groups.entries()].map(([id,items])=>{const byStore={};items.forEach(x=>{if(!byStore[x.store]||x.normalizedUnitPrice<byStore[x.store].normalizedUnitPrice)byStore[x.store]=x});const list=Object.values(byStore);if(list.length<2)return null;list.sort((a,b)=>a.normalizedUnitPrice-b.normalizedUnitPrice);const g=state.data.comparisonGroups.find(z=>z.comparisonGroupId===id);return{id,item:g?.name||list[0].productName,category:g?.department||list[0].department,match:list[0].comparisonLevel,winner:list[0].store,unit:list[0].normalizedUnit,items:list}}).filter(Boolean).filter(x=>(state.category==="All"||x.category===state.category)&&(f.match==="all"||x.match===f.match)&&(f.store==="all"||x.items.some(i=>i.store===f.store))&&(`${x.item} ${x.category} ${x.winner}`.toLowerCase().includes(f.q)))}
+function render(){const d=state.data,stores=d.stores||[];$("#weekLabel").textContent=d.dataWeek.label;$("#coverageText").textContent=`${d.metadata.totalDeals} deals extracted from ${stores.length} store circulars using the master workbook.`;$("#circularLinks").innerHTML=d.circulars.map(c=>`<a class="circular-link" href="${esc(c.url||'#')}" target="_blank" rel="noopener noreferrer"><span><b>${esc(c.store)}</b><small>${esc(c.startDate)} through ${esc(c.endDate)} · ${c.dealCount} deals</small></span><span>↗</span></a>`).join("");$("#sourceStatus").textContent="Master workbook production data";$("#sourceStatusDetail").textContent=`Loaded ${d.metadata.totalDeals} deal rows, ${d.metadata.productCount} products and ${d.metadata.comparisonGroupCount} comparison groups directly from Grocery-Intelligence-Master-July-2026.xlsx.`;
+const cats=["All",...new Set(d.deals.map(x=>x.department||"Other"))];$("#categoryRow").innerHTML=cats.map(c=>`<button data-cat="${esc(c)}" class="${c===state.category?'active':''}">${esc(c)}</button>`).join("");$("#categoryRow").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;render()});
+const comps=comparisons(),wins=comps.reduce((a,x)=>(a[x.winner]=(a[x.winner]||0)+1,a),{}),win=Object.entries(wins).sort((a,b)=>b[1]-a[1])[0];$("#overallWinner").textContent=win?.[0]||"No clear winner";$("#winnerReason").textContent=win?`${win[1]} comparable-product wins using normalized unit prices.`:"More comparison-ready products are needed.";
+const publicCount=d.deals.filter(x=>!x.needsReview).length;$("#statGrid").innerHTML=[["Captured deals",d.metadata.totalDeals,"Every row from the master sheet"],["Public-ready",publicCount,`${d.metadata.totalDeals-publicCount} flagged for review`],["Comparisons",comps.length,"Two or more stores with matching units"],["Stores",stores.length,stores.join(" · ")]].map(x=>`<article class="stat"><span>${x[0]}</span><strong>${x[1]}</strong><small>${esc(x[2])}</small></article>`).join("");
+$("#comparisonCount").textContent=`${comps.length} shown`;$("#comparisonList").innerHTML=comps.map(x=>`<article class="comparison"><div class="comparison-top"><div><h4>${esc(x.item)}</h4><span class="match ${x.match==='Category candidate'?'comparable':''}">${esc(x.match)}</span></div><span class="winner-chip">${esc(x.winner)} wins</span></div><div class="prices dynamic-prices">${x.items.map(i=>`<div class="store-price ${i.store===x.winner?'winner':''}"><span>${esc(i.store.toUpperCase())}</span><strong>${esc(i.advertisedPrice)}</strong><small>${money(i.normalizedUnitPrice)}/${esc(i.normalizedUnit)}</small></div>`).join("")}</div><p class="note">Compared using normalized ${esc(x.unit)} pricing. Coupon and loyalty requirements remain visible in each deal.</p></article>`).join("")||`<p class="empty">No comparisons match those filters.</p>`;
+const deals=visibleDeals();$("#dealCount").textContent=`${deals.length} shown`;$("#dealGrid").innerHTML=deals.map(dealCard).join("")||`<p class="empty">No deals match those filters.</p>`;bindHearts("#dealGrid");const plan=d.deals.filter(x=>!x.needsReview&&x.comparisonReady).sort((a,b)=>(a.normalizedUnitPrice??9999)-(b.normalizedUnitPrice??9999));$("#planGrid").innerHTML=stores.map(store=>{const items=plan.filter(x=>x.store===store).slice(0,8);return `<article class="store-plan"><h4><span>${esc(store)}</span><span>${items.length} buys</span></h4><ul>${items.map(x=>`<li>${esc(x.productName)} — <b>${esc(x.advertisedPrice)}</b></li>`).join("")}</ul></article>`}).join("");renderFavorites();renderViews()}
+function money(v){return typeof v==='number'?`$${v.toFixed(v<1?3:2)}`:"—"}
+function dealCard(x){const id=x.dealId,saved=state.favorites.has(id);const req=[];if(x.loyaltyRequired)req.push('<span class="req loyalty">Loyalty card</span>');if(x.digitalCouponRequired)req.push('<span class="req">Digital coupon</span>');if(x.minimumPurchase)req.push(`<span class="req">${esc(x.minimumPurchase)}</span>`);if(x.purchaseLimit)req.push(`<span class="req">Limit ${esc(x.purchaseLimit)}</span>`);return `<article class="deal"><div class="deal-head"><span class="store-pill">${esc(x.store)}</span><button class="heart ${saved?'saved':''}" data-id="${esc(id)}">${saved?'♥':'♡'}</button></div><h4>${esc(x.productName)}</h4><small>${esc(x.brand||'')} ${x.packageSize?`· ${esc(x.packageSize)}`:''}</small><div class="promo">${esc(x.promotionType||'Weekly deal')}${x.promotionDetail?` · ${esc(x.promotionDetail)}`:''}</div><div class="price">${esc(x.advertisedPrice)}</div>${typeof x.normalizedUnitPrice==='number'?`<div class="unit-price">${money(x.normalizedUnitPrice)} per ${esc(x.normalizedUnit||'unit')}</div>`:''}<div class="requirements">${req.join('')}</div><div class="fineprint">Valid ${esc(x.adStart)}–${esc(x.adEnd)} · ${esc(x.sourcePage)}</div>${x.needsReview?`<div class="review-note">Review flagged: ${esc(x.reviewReason||'verify ad details')}</div>`:''}</article>`}
+function bindHearts(sel){$(sel).querySelectorAll('.heart').forEach(b=>b.onclick=()=>toggleFavorite(b.dataset.id))}function toggleFavorite(id){state.favorites.has(id)?state.favorites.delete(id):state.favorites.add(id);localStorage.setItem('groceryFavorites',JSON.stringify([...state.favorites]));render()}function renderFavorites(){const list=state.data.deals.filter(x=>state.favorites.has(x.dealId));$("#favoriteGrid").innerHTML=list.map(dealCard).join('');bindHearts('#favoriteGrid');$("#favoriteEmpty").classList.toggle('hidden',list.length>0)}function renderViews(){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===state.view));$("#"+state.view+"View").classList.add('active')}
 boot().catch(err=>{document.body.innerHTML=`<main><h2>Dashboard could not load</h2><p>${esc(err.message)}</p><p>Open it through GitHub Pages or a local web server rather than directly as a file.</p></main>`});
