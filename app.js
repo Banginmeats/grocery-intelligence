@@ -5,16 +5,32 @@ const esc=v=>String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 
 async function boot(){
   state.manifest=await fetch("data/manifest.json").then(r=>r.json());
-  $("#weekSelect").innerHTML=state.manifest.weeks.map(w=>`<option value="${esc(w.id)}">${esc(w.label)}</option>`).join("");
-  $("#weekSelect").value=state.manifest.defaultWeek;
-  await loadWeek(state.manifest.defaultWeek);
+  const localWeek=readUploadedWeek();
+  const options=[...(localWeek?[{id:"uploaded-local",label:`Uploaded · ${localWeek.meta.week}`}]:[]),...state.manifest.weeks];
+  $("#weekSelect").innerHTML=options.map(w=>`<option value="${esc(w.id)}">${esc(w.label)}</option>`).join("");
+  const preferred=localWeek?"uploaded-local":state.manifest.defaultWeek;
+  $("#weekSelect").value=preferred;
+  await loadWeek(preferred);
   wire();
 }
+function readUploadedWeek(){
+  try{return JSON.parse(localStorage.getItem("groceryUploadedWeek")||"null")}catch{return null}
+}
 async function loadWeek(id){
-  const item=state.manifest.weeks.find(w=>w.id===id);
-  state.data=await fetch(item.file).then(r=>r.json());
+  if(id==="uploaded-local"){
+    state.data=readUploadedWeek();
+    if(!state.data) return loadWeek(state.manifest.defaultWeek);
+  }else{
+    const item=state.manifest.weeks.find(w=>w.id===id);
+    state.data=await fetch(item.file).then(r=>r.json());
+  }
   state.category="All";
+  buildStoreFilter();
   render();
+}
+function buildStoreFilter(){
+  const stores=state.data?.meta?.stores||[];
+  $("#storeFilter").innerHTML=`<option value="all">All stores</option>${stores.map(x=>`<option>${esc(x)}</option>`).join("")}`;
 }
 function wire(){
   $("#weekSelect").addEventListener("change",e=>loadWeek(e.target.value));
@@ -24,88 +40,78 @@ function wire(){
   $("#themeButton").onclick=()=>{document.body.classList.toggle("dark");localStorage.setItem("groceryTheme",document.body.classList.contains("dark")?"dark":"light")};
   if(localStorage.getItem("groceryTheme")==="dark")document.body.classList.add("dark");
 }
-function filters(){
-  return {q:$("#searchInput").value.trim().toLowerCase(),store:$("#storeFilter").value,match:$("#matchFilter").value};
-}
+function filters(){return {q:$("#searchInput").value.trim().toLowerCase(),store:$("#storeFilter").value,match:$("#matchFilter").value}}
 function render(){
-  const d=state.data, f=filters();
+  const d=state.data,f=filters(),stores=d.meta.stores||[];
   $("#weekLabel").textContent=d.meta.week;
-  $("#coverageText").textContent=d.meta.coverage||`ZIP ${d.meta.zip}`;
+  $("#coverageText").textContent=d.meta.coverage||`${stores.length} uploaded store${stores.length===1?"":"s"}`;
   const circulars=d.meta.circulars||[];
-  if(circulars.length){
-    $("#circularLinks").innerHTML=circulars.map(c=>`<a class="circular-link" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer"><span><b>${esc(c.name)}</b><small>${esc(c.label||"Weekly ad")}</small></span><span aria-hidden="true">↗</span></a>`).join("");
-  }
-  const live = d.meta && d.meta.source === "live-url";
-  const sourceStatus = $("#sourceStatus");
-  const sourceDetail = $("#sourceStatusDetail");
-  if(sourceStatus) sourceStatus.textContent = live ? "Live retailer URL data published" : "Screenshot fallback currently published";
-  if(sourceDetail) sourceDetail.textContent = live
-    ? `Live pull completed ${d.meta.generatedAt ? new Date(d.meta.generatedAt).toLocaleString() : "successfully"}.`
-    : "Run “Live grocery URL update” in GitHub Actions. The site changes to live URL data only after the pull passes its completeness check.";
-  const cats=["All",...new Set(d.deals.map(x=>x.category))];
+  $("#circularLinks").innerHTML=circulars.length?circulars.map(c=>c.objectUrl
+    ?`<a class="circular-link" href="${esc(c.objectUrl)}" target="_blank" rel="noopener"><span><b>${esc(c.name)}</b><small>${esc(c.label||"Uploaded PDF")}</small></span><span>↗</span></a>`
+    :`<div class="circular-link"><span><b>${esc(c.name)}</b><small>${esc(c.label||"Uploaded PDF")}</small></span><span>PDF</span></div>`).join("")
+    :`<a class="circular-link" href="studio.html"><span><b>Upload circular PDFs</b><small>Add any number of stores</small></span><span>→</span></a>`;
+  const isUploaded=d.meta.source==="pdf-upload";
+  $("#sourceStatus").textContent=isUploaded?"Uploaded PDF circular data":"Built-in demonstration week";
+  $("#sourceStatusDetail").textContent=isUploaded
+    ?`${d.deals.length} reviewed deals from ${stores.length} store${stores.length===1?"":"s"}. Created ${new Date(d.meta.generatedAt).toLocaleString()}.`
+    :"Use Upload circular PDFs to create a new week from as many or as few stores as you choose.";
+
+  const cats=["All",...new Set(d.deals.map(x=>x.category||"Other"))];
   $("#categoryRow").innerHTML=cats.map(c=>`<button data-cat="${esc(c)}" class="${c===state.category?"active":""}">${esc(c)}</button>`).join("");
   $("#categoryRow").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;render()});
 
-  const validWinners=d.comparisons.map(x=>x.winner).filter(x=>["Weis","Harris Teeter","Giant"].includes(x));
-  const wins=validWinners.reduce((a,x)=>(a[x]=(a[x]||0)+1,a),{});
+  const wins=(d.comparisons||[]).map(x=>x.winner).filter(Boolean).reduce((a,x)=>(a[x]=(a[x]||0)+1,a),{});
   const winner=Object.entries(wins).sort((a,b)=>b[1]-a[1])[0]?.[0]||"No clear winner";
   $("#overallWinner").textContent=winner;
-  $("#winnerReason").textContent=winner==="No clear winner"?"More exact matches are needed.":`${wins[winner]} current comparison wins.`;
+  $("#winnerReason").textContent=winner==="No clear winner"?"More comparable products are needed.":`${wins[winner]} current comparison wins.`;
 
-  const exact=d.comparisons.filter(x=>x.match==="Exact").length;
-  const strong=d.deals.filter(x=>x.rating>=4).length;
+  const exact=(d.comparisons||[]).filter(x=>x.match==="Exact").length;
+  const strong=d.deals.filter(x=>(x.rating||0)>=4).length;
   $("#statGrid").innerHTML=[
-    ["Captured deals",d.deals.length,"Current JSON week"],
-    ["Comparisons",d.comparisons.length,`${exact} confirmed exact`],
+    ["Captured deals",d.deals.length,isUploaded?"Reviewed PDF extraction":"Current JSON week"],
+    ["Comparisons",(d.comparisons||[]).length,`${exact} confirmed exact`],
     ["Strong buys",strong,"Rated four or five stars"],
-    ["Stores",d.meta.stores.length,"All within a few miles"]
+    ["Stores",stores.length,isUploaded?"Uploaded this week":"Demonstration data"]
   ].map(x=>`<article class="stat"><span>${x[0]}</span><strong>${x[1]}</strong><small>${x[2]}</small></article>`).join("");
 
-  const comps=d.comparisons.filter(x=>
+  const comps=(d.comparisons||[]).filter(x=>
     (state.category==="All"||x.category===state.category)&&
     (f.match==="all"||x.match===f.match)&&
     (`${x.item} ${x.category} ${x.note} ${x.winner}`.toLowerCase().includes(f.q))&&
-    (f.store==="all"||(f.store==="Weis"&&x.weis)||(f.store==="Harris Teeter"&&x.ht)||(f.store==="Giant"&&x.giant))
+    (f.store==="all"&&true||x.prices?.[f.store])
   );
   $("#comparisonCount").textContent=`${comps.length} shown`;
   $("#comparisonList").innerHTML=comps.map(x=>`<article class="comparison">
-    <div class="comparison-top"><div><h4>${esc(x.item)}</h4><span class="match ${x.match==="Comparable"?"comparable":""}">${esc(x.match)}</span></div><span class="winner-chip">${esc(x.winner)}</span></div>
-    <div class="prices">
-      <div class="store-price"><span>WEIS</span><strong>${esc(x.weis||"—")}</strong></div>
-      <div class="store-price"><span>HARRIS TEETER</span><strong>${esc(x.ht||"—")}</strong></div>
-      <div class="store-price"><span>GIANT</span><strong>${esc(x.giant||"—")}</strong></div>
-    </div><p class="note">${esc(x.note||"")}</p></article>`).join("")||`<p class="empty">No comparisons match those filters.</p>`;
+    <div class="comparison-top"><div><h4>${esc(x.item)}</h4><span class="match ${x.match==="Comparable"?"comparable":""}">${esc(x.match||"Comparable")}</span></div><span class="winner-chip">${esc(x.winner||"—")}</span></div>
+    <div class="prices dynamic-prices">${stores.map(store=>`<div class="store-price"><span>${esc(store.toUpperCase())}</span><strong>${esc(x.prices?.[store]||"—")}</strong></div>`).join("")}</div>
+    <p class="note">${esc(x.note||"")}</p></article>`).join("")||`<p class="empty">No comparisons match those filters.</p>`;
 
   const deals=d.deals.filter(x=>
-    (state.category==="All"||x.category===state.category)&&
+    (state.category==="All"||(x.category||"Other")===state.category)&&
     (f.store==="all"||x.store===f.store)&&
-    (`${x.item} ${x.brand} ${x.category} ${x.promo}`.toLowerCase().includes(f.q))
+    (`${x.item} ${x.brand||""} ${x.category||""} ${x.promo||""}`.toLowerCase().includes(f.q))
   );
   $("#dealCount").textContent=`${deals.length} shown`;
   $("#dealGrid").innerHTML=deals.map(dealCard).join("")||`<p class="empty">No deals match those filters.</p>`;
-  $("#dealGrid").querySelectorAll(".heart").forEach(b=>b.onclick=()=>toggleFavorite(Number(b.dataset.id)));
+  $("#dealGrid").querySelectorAll(".heart").forEach(b=>b.onclick=()=>toggleFavorite(String(b.dataset.id)));
 
-  const strongDeals=d.deals.filter(x=>x.rating>=4);
-  $("#planGrid").innerHTML=d.meta.stores.map(store=>{
-    const items=strongDeals.filter(x=>x.store===store).sort((a,b)=>b.rating-a.rating).slice(0,8);
+  const strongDeals=d.deals.filter(x=>(x.rating||0)>=4);
+  $("#planGrid").innerHTML=stores.map(store=>{
+    const items=strongDeals.filter(x=>x.store===store).sort((a,b)=>(b.rating||0)-(a.rating||0)).slice(0,8);
     return `<article class="store-plan"><h4><span>${esc(store)}</span><span>${items.length} buys</span></h4>${items.length?`<ul>${items.map(x=>`<li>${esc(x.item)} — <b>${esc(x.display)}</b></li>`).join("")}</ul>`:"<p>No strong loaded deals.</p>"}</article>`;
   }).join("");
-
   renderFavorites();renderViews();
 }
 function dealCard(x){
-  const saved=state.favorites.has(x.id);
-  return `<article class="deal"><div class="deal-head"><span class="store-pill">${esc(x.store)}</span><button class="heart ${saved?"saved":""}" data-id="${x.id}" aria-label="Favorite">${saved?"♥":"♡"}</button></div>
-  <h4>${esc(x.item)}</h4><small>${esc(x.brand)} · ${esc(x.size)}</small><div class="promo">${esc(x.promo)}</div><div class="price">${esc(x.display)}</div><div class="stars">${"★".repeat(x.rating)}${"☆".repeat(5-x.rating)}</div></article>`;
+  const id=String(x.id),saved=state.favorites.has(id);
+  return `<article class="deal"><div class="deal-head"><span class="store-pill">${esc(x.store)}</span><button class="heart ${saved?"saved":""}" data-id="${esc(id)}">${saved?"♥":"♡"}</button></div>
+  <h4>${esc(x.item)}</h4><small>${esc(x.brand||"")} ${x.size?`· ${esc(x.size)}`:""}</small><div class="promo">${esc(x.promo||"")}</div><div class="price">${esc(x.display||"")}</div><div class="stars">${"★".repeat(x.rating||0)}${"☆".repeat(5-(x.rating||0))}</div></article>`;
 }
-function toggleFavorite(id){
-  state.favorites.has(id)?state.favorites.delete(id):state.favorites.add(id);
-  localStorage.setItem("groceryFavorites",JSON.stringify([...state.favorites]));render();
-}
+function toggleFavorite(id){state.favorites.has(id)?state.favorites.delete(id):state.favorites.add(id);localStorage.setItem("groceryFavorites",JSON.stringify([...state.favorites]));render()}
 function renderFavorites(){
-  const list=state.data.deals.filter(x=>state.favorites.has(x.id));
+  const list=state.data.deals.filter(x=>state.favorites.has(String(x.id)));
   $("#favoriteGrid").innerHTML=list.map(dealCard).join("");
-  $("#favoriteGrid").querySelectorAll(".heart").forEach(b=>b.onclick=()=>toggleFavorite(Number(b.dataset.id)));
+  $("#favoriteGrid").querySelectorAll(".heart").forEach(b=>b.onclick=()=>toggleFavorite(String(b.dataset.id)));
   $("#favoriteEmpty").classList.toggle("hidden",list.length>0);
 }
 function renderViews(){

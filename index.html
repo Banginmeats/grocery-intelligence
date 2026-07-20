@@ -11,9 +11,9 @@
   <header class="appbar">
     <div class="brand">
       <div class="mark">GI</div>
-      <div><h1>Grocery Intelligence</h1><p>Weis · Harris Teeter · Giant · ZIP 19966</p></div>
+      <div><h1>Grocery Intelligence</h1><p>Compare any stores from uploaded circular PDFs</p></div>
     </div>
-    <button class="icon-button" id="themeButton" aria-label="Toggle theme">◐</button>
+    <div class="header-actions"><a class="studio-button" href="studio.html">Upload circular PDFs</a><button class="icon-button" id="themeButton" aria-label="Toggle theme">◐</button></div>
   </header>
 
   <main>
@@ -53,8 +53,8 @@
     <section class="source-status card">
       <div>
         <span class="kicker">DATA SOURCE STATUS</span>
-        <strong id="sourceStatus">Screenshot fallback currently published</strong>
-        <p id="sourceStatusDetail">Run “Live grocery URL update” in GitHub Actions. The site changes to live URL data only after the pull passes its completeness check.</p>
+        <strong id="sourceStatus">Built-in demonstration week</strong>
+        <p id="sourceStatusDetail">Use Upload circular PDFs to create a new week from as many or as few stores as you choose.</p>
       </div>
     </section>
 
@@ -134,7 +134,7 @@
     </section>
   </main>
 
-  <footer>Automated weekly pull · GitHub Actions + Pages · ZIP 19966</footer>
+  <footer>PDF circular comparison studio · Processing occurs locally in your browser</footer>
   <script src="app.js"></script>
 </body>
 </html>
