@@ -1,0 +1,9 @@
+GROCERY INTELLIGENCE v2.3
+
+1. Extract this ZIP.
+2. Delete the existing visible website files in the local repository, but preserve the hidden .git folder.
+3. Copy all files and folders from this package into the repository root.
+4. Open GitHub Desktop.
+5. Commit: Add search intelligence and reliable PDF circulars
+6. Push origin.
+7. Refresh the live site with Ctrl+F5 and confirm v2.3 appears in the header.

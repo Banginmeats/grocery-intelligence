@@ -1,0 +1,14 @@
+{
+  "defaultWeek": "2026-07-15",
+  "weeks": [
+    {
+      "id": "2026-07-15",
+      "label": "Week 1 \u00b7 July 15\u201323, 2026",
+      "file": "data/week-2026-07-15.json",
+      "status": "sheet-verified",
+      "dealCount": 902
+    }
+  ],
+  "siteVersion": "2.2",
+  "version": "2.3"
+}
