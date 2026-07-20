@@ -31,6 +31,8 @@ function render(){
   const d=state.data, f=filters();
   $("#weekLabel").textContent=d.meta.week;
   $("#coverageText").textContent=d.meta.coverage||`ZIP ${d.meta.zip}`;
+  const circulars=d.meta.circulars||[];
+  $("#circularLinks").innerHTML=circulars.map(c=>`<a class="circular-link" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer"><span><b>${esc(c.name)}</b><small>${esc(c.label||"Weekly ad")}</small></span><span aria-hidden="true">↗</span></a>`).join("")||`<span class="empty">Circular links are unavailable for this week.</span>`;
   const cats=["All",...new Set(d.deals.map(x=>x.category))];
   $("#categoryRow").innerHTML=cats.map(c=>`<button data-cat="${esc(c)}" class="${c===state.category?"active":""}">${esc(c)}</button>`).join("");
   $("#categoryRow").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;render()});

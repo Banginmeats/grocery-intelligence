@@ -14,7 +14,7 @@ try{
     console.log(`Scraping ${cfg.name}…`);
     const result=await scrapeStore(browser,key,cfg,config.zip);
     const normalized=result.raw.map(x=>normalizeRaw(x,cfg.name,week)).filter(Boolean);
-    diagnostics[key]={raw:result.raw.length,normalized:normalized.length,network:result.networkCount,dom:result.domCount,error:result.error};
+    diagnostics[key]={raw:result.raw.length,normalized:normalized.length,network:result.networkCount,embedded:result.embeddedCount,dom:result.domCount,finalUrl:result.finalUrl,error:result.error};
     all.push(...normalized);
     console.log(`${cfg.name}: ${normalized.length} normalized offers`);
   }

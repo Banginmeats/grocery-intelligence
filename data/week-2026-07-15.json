@@ -8,7 +8,28 @@
       "Giant"
     ],
     "coverage": "All 33 uploaded circular screenshots indexed; confirmed records plus OCR-assisted records flagged for verification",
-    "capture_note": "Confirmed items are manually structured. OCR-assisted entries preserve additional visible offers and are marked Verify where fine print or product text is uncertain."
+    "capture_note": "Confirmed items are manually structured. OCR-assisted entries preserve additional visible offers and are marked Verify where fine print or product text is uncertain.",
+    "dataSource": "Uploaded circular screenshots",
+    "circulars": [
+      {
+        "name": "Weis",
+        "label": "Millsboro #272",
+        "url": "https://www.weismarkets.com/weeklyad",
+        "storeUrl": "https://www.weismarkets.com/stores/weis-markets-millsboro-272/4348"
+      },
+      {
+        "name": "Harris Teeter",
+        "label": "Bayside, Selbyville",
+        "url": "https://www.harristeeter.com/weeklyad",
+        "storeUrl": "https://www.harristeeter.com/stores/grocery/de/selbyville/bayside/097/00327"
+      },
+      {
+        "name": "Giant",
+        "label": "Millsboro",
+        "url": "https://stores.giantfood.com/de/millsboro/25939-john-j-williams-hwy",
+        "storeUrl": "https://stores.giantfood.com/de/millsboro/25939-john-j-williams-hwy"
+      }
+    ]
   },
   "deals": [
     {

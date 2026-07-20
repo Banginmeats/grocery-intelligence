@@ -1,23 +1,32 @@
 {
   "zip": "19966",
   "timezone": "America/New_York",
-  "minimumTotalDeals": 40,
+  "minimumTotalDeals": 25,
+  "marketLabel": "Millsboro / Long Neck, Delaware 19966",
   "stores": {
-    "giant": {
-      "name": "Giant",
-      "url": "https://giantfood.com/savings/weekly-ad/print-view",
+    "weis": {
+      "name": "Weis",
+      "url": "https://www.weismarkets.com/weeklyad",
+      "circularUrl": "https://www.weismarkets.com/weeklyad",
+      "storeUrl": "https://www.weismarkets.com/stores/weis-markets-millsboro-272/4348",
+      "storeLabel": "Millsboro #272",
       "enabled": true
     },
     "harris-teeter": {
       "name": "Harris Teeter",
-      "url": "https://www.harristeeter.com/weeklyad?flyer_type_name=weekly",
+      "url": "https://www.harristeeter.com/weeklyad",
+      "circularUrl": "https://www.harristeeter.com/weeklyad",
+      "storeUrl": "https://www.harristeeter.com/stores/grocery/de/selbyville/bayside/097/00327",
+      "storeLabel": "Bayside, Selbyville",
       "enabled": true
     },
-    "weis": {
-      "name": "Weis",
-      "url": "https://www.weismarkets.com/flyers/print",
+    "giant": {
+      "name": "Giant",
+      "url": "https://stores.giantfood.com/de/millsboro/25939-john-j-williams-hwy",
+      "circularUrl": "https://stores.giantfood.com/de/millsboro/25939-john-j-williams-hwy",
+      "storeUrl": "https://stores.giantfood.com/de/millsboro/25939-john-j-williams-hwy",
+      "storeLabel": "Millsboro",
       "enabled": true
     }
-  },
-  "marketLabel": "Millsboro / Long Neck, Delaware 19966"
+  }
 }
